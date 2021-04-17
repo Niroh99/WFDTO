@@ -1,0 +1,19 @@
+﻿<local:OverlayWindow x:Class="WFDTO.MainWindow"
+                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                     xmlns:local="clr-namespace:WFDTO"
+                     xmlns:controls="clr-namespace:WFDTOCustomControlLibrary;assembly=WFDTOCustomControlLibrary"
+                     mc:Ignorable="d"
+                     TargetHeight="300"
+                     TargetWidth="600"
+                     d:DesignHeight="200"
+                     d:DesignWidth="600"
+                     Background="Transparent"
+                     Foreground="{StaticResource GoldBrush}">
+    <Grid>
+        <controls:AdvancedTabControl x:Name="SearchTabControl" Margin="5"/>
+        <TextBlock Text="Loading.." x:Name="LoadingTextBlock" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+    </Grid>
+</local:OverlayWindow>
