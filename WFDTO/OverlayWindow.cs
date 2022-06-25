@@ -4,8 +4,11 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shell;
+using WFDTO.Themes;
 
 namespace WFDTO
 {
@@ -61,14 +64,11 @@ namespace WFDTO
         private Button CloseButton;
         private StackPanel ButtonsStackPanel;
         private Button AlignmentPopupButton;
-        private Popup AlignmentPopup;
-        private Button AlignTopButton;
-        private Button AlignBottomButton;
-        private Button AlignLeftButton;
-        private Button AlignRightButton;
         private Thumb RepositionThumb;
+        private Thumb TopResizeThumb;
+        private Thumb BottomResizeThumb;
 
-        public EventHandler TemplateApplyed;
+        public event EventHandler TemplateApplyed;
 
         public override void OnApplyTemplate()
         {
@@ -77,20 +77,15 @@ namespace WFDTO
             CloseButton = (Button)GetTemplateChild("CloseButton");
             ButtonsStackPanel = (StackPanel)GetTemplateChild("ButtonsStackPanel");
             AlignmentPopupButton = (Button)GetTemplateChild("AlignmentPopupButton");
-            AlignmentPopup = (Popup)GetTemplateChild("AlignmentPopup");
-            AlignTopButton = (Button)GetTemplateChild("AlignTopButton");
-            AlignBottomButton = (Button)GetTemplateChild("AlignBottomButton");
-            AlignLeftButton = (Button)GetTemplateChild("AlignLeftButton");
-            AlignRightButton = (Button)GetTemplateChild("AlignRightButton");
             RepositionThumb = (Thumb)GetTemplateChild("RepositionThumb");
+            TopResizeThumb = (Thumb)GetTemplateChild("TopRisizeThumb");
+            BottomResizeThumb = (Thumb)GetTemplateChild("BottomResizeThumb");
 
             CloseButton.Click += CloseButton_Click;
             AlignmentPopupButton.Click += AlignmentPopupButton_Click;
-            AlignTopButton.Click += AlignTopButton_Click;
-            AlignBottomButton.Click += AlignBottomButton_Click;
-            AlignLeftButton.Click += AlignLeftButton_Click;
-            AlignRightButton.Click += AlignRightButton_Click;
             RepositionThumb.DragDelta += RepositionThumb_DragDelta;
+            TopResizeThumb.DragDelta += TopResizeThumb_DragDelta;
+            BottomResizeThumb.DragDelta += BottomResizeThumb_DragDelta;
 
             OnExpandDirectionPropertyChanged();
 
@@ -105,6 +100,20 @@ namespace WFDTO
             TemplateApplyed?.Invoke(this, EventArgs.Empty);
         }
 
+        private void TopResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            Top += e.VerticalChange;
+
+            if (Height - e.VerticalChange < 0) Height = 0;
+            else Height -= e.VerticalChange;
+        }
+
+        private void BottomResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            if (Height + e.VerticalChange < 0) Height = 0;
+            else Height += e.VerticalChange;
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
@@ -112,27 +121,27 @@ namespace WFDTO
 
         private void AlignmentPopupButton_Click(object sender, RoutedEventArgs e)
         {
-            if (AlignmentPopup != null) AlignmentPopup.IsOpen = true;
+            AlignmentPopupButton.ContextMenu.PlacementTarget = AlignmentPopupButton;
+            AlignmentPopupButton.ContextMenu.Placement = PlacementMode.Bottom;
+            AlignmentPopupButton.ContextMenu.IsOpen = true;
         }
 
-        private void AlignTopButton_Click(object sender, RoutedEventArgs e)
+        ICommand _changeAlignmentCommand;
+        public ICommand ChangeAlignmentCommand
         {
-            ExpandDirection = ExpandDirection.Down;
-        }
-
-        private void AlignBottomButton_Click(object sender, RoutedEventArgs e)
-        {
-            ExpandDirection = ExpandDirection.Up;
-        }
-
-        private void AlignLeftButton_Click(object sender, RoutedEventArgs e)
-        {
-            ExpandDirection = ExpandDirection.Right;
-        }
-
-        private void AlignRightButton_Click(object sender, RoutedEventArgs e)
-        {
-            ExpandDirection = ExpandDirection.Left;
+            get
+            {
+                return _changeAlignmentCommand ?? (_changeAlignmentCommand = new WFDTOCustomControlLibrary.DefaultCommand(new Action<object>((parameter) =>
+                {
+                    switch ((string)parameter)
+                    {
+                        case "Top": ExpandDirection = ExpandDirection.Down; break;
+                        case "Bottom": ExpandDirection = ExpandDirection.Up; break;
+                        case "Left": ExpandDirection = ExpandDirection.Right; break;
+                        case "Right": ExpandDirection = ExpandDirection.Left; break;
+                    }
+                })));
+            }
         }
 
         private void RepositionThumb_DragDelta(object sender, DragDeltaEventArgs e)
@@ -141,16 +150,28 @@ namespace WFDTO
             {
                 case ExpandDirection.Up:
                 case ExpandDirection.Down:
-                {
-                    if (Left + Width + e.HorizontalChange <= SystemParameters.PrimaryScreenWidth && Left + e.HorizontalChange >= 0) Left += e.HorizontalChange;
-                    break;
-                }
+                    {
+                        var newLeft = Left + e.HorizontalChange;
+
+                        if (newLeft < 0) newLeft = 0;
+                        else if (newLeft + Width > SystemParameters.PrimaryScreenWidth) newLeft = SystemParameters.PrimaryScreenWidth - Width;
+
+                        Left = newLeft;
+
+                        break;
+                    }
                 case ExpandDirection.Left:
                 case ExpandDirection.Right:
-                {
-                    if (Top + Height + e.VerticalChange <= SystemParameters.PrimaryScreenHeight && Top + e.VerticalChange >= 0) Top += e.VerticalChange;
-                    break;
-                }
+                    {
+                        var newTop = Top + e.VerticalChange;
+
+                        if (newTop < 0) newTop = 0;
+                        else if (newTop + Height > SystemParameters.PrimaryScreenHeight) newTop = SystemParameters.PrimaryScreenHeight - Height;
+
+                        Top = newTop;
+
+                        break;
+                    }
             }
         }
 
@@ -159,124 +180,151 @@ namespace WFDTO
             switch (ExpandDirection)
             {
                 case ExpandDirection.Up:
-                {
-                    CloseButton.HorizontalAlignment = HorizontalAlignment.Right;
-                    CloseButton.VerticalAlignment = VerticalAlignment.Center;
-                    CloseButton.SetValue(Grid.ColumnProperty, 1);
-                    CloseButton.SetValue(Grid.RowProperty, 2);
-                    ButtonsStackPanel.HorizontalAlignment = HorizontalAlignment.Center;
-                    ButtonsStackPanel.VerticalAlignment = VerticalAlignment.Bottom;
-                    ButtonsStackPanel.Orientation = Orientation.Horizontal;
-                    ButtonsStackPanel.SetValue(Grid.ColumnProperty, 1);
-                    ButtonsStackPanel.SetValue(Grid.RowProperty, 2);
-                    ButtonsStackPanel.Margin = new Thickness(0, 2, 0, 0);
-                    AlignmentPopup.Placement = PlacementMode.Top;
-                    RepositionThumb.Cursor = System.Windows.Input.Cursors.SizeWE;
-
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
                     {
-                        if (!IsExpanded)
+                        CloseButton.HorizontalAlignment = HorizontalAlignment.Right;
+                        CloseButton.VerticalAlignment = VerticalAlignment.Center;
+                        CloseButton.SetValue(Grid.ColumnProperty, 1);
+                        CloseButton.SetValue(Grid.RowProperty, 2);
+                        ButtonsStackPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                        ButtonsStackPanel.VerticalAlignment = VerticalAlignment.Bottom;
+                        ButtonsStackPanel.Orientation = Orientation.Horizontal;
+                        ButtonsStackPanel.SetValue(Grid.ColumnProperty, 1);
+                        ButtonsStackPanel.SetValue(Grid.RowProperty, 2);
+                        RepositionThumb.Cursor = System.Windows.Input.Cursors.SizeWE;
+
+                        if (IsExpanded)
                         {
-                            Height = ButtonsStackPanel.RenderSize.Height;
-                            Width = ButtonsStackPanel.RenderSize.Width;
+                            TopResizeThumb.Visibility = Visibility.Visible;
+                            BottomResizeThumb.Visibility = Visibility.Collapsed;
                         }
 
-                        Top = SystemParameters.PrimaryScreenHeight - Height;
+                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
+                        {
+                            if (!IsExpanded)
+                            {
+                                Height = ButtonsStackPanel.RenderSize.Height;
+                                MinHeight = ButtonsStackPanel.RenderSize.Height;
+                                Width = ButtonsStackPanel.RenderSize.Width;
+                                MinWidth = ButtonsStackPanel.RenderSize.Width;
+                            }
 
-                        if (Left + Width > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - Width;
-                    }));
-                    break;
-                }
+                            Top = SystemParameters.PrimaryScreenHeight - Height;
+
+                            if (Left + Width > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - Width;
+                        }));
+                        break;
+                    }
                 case ExpandDirection.Down:
-                {
-                    CloseButton.HorizontalAlignment = HorizontalAlignment.Right;
-                    CloseButton.VerticalAlignment = VerticalAlignment.Center;
-                    CloseButton.SetValue(Grid.ColumnProperty, 1);
-                    CloseButton.SetValue(Grid.RowProperty, 0);
-                    ButtonsStackPanel.HorizontalAlignment = HorizontalAlignment.Center;
-                    ButtonsStackPanel.VerticalAlignment = VerticalAlignment.Top;
-                    ButtonsStackPanel.Orientation = Orientation.Horizontal;
-                    ButtonsStackPanel.SetValue(Grid.ColumnProperty, 1);
-                    ButtonsStackPanel.SetValue(Grid.RowProperty, 0);
-                    ButtonsStackPanel.Margin = new Thickness(0, 0, 0, 2);
-                    AlignmentPopup.Placement = PlacementMode.Bottom;
-                    RepositionThumb.Cursor = System.Windows.Input.Cursors.SizeWE;
-
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
                     {
-                        if (!IsExpanded)
+                        CloseButton.HorizontalAlignment = HorizontalAlignment.Right;
+                        CloseButton.VerticalAlignment = VerticalAlignment.Center;
+                        CloseButton.SetValue(Grid.ColumnProperty, 1);
+                        CloseButton.SetValue(Grid.RowProperty, 0);
+                        ButtonsStackPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                        ButtonsStackPanel.VerticalAlignment = VerticalAlignment.Top;
+                        ButtonsStackPanel.Orientation = Orientation.Horizontal;
+                        ButtonsStackPanel.SetValue(Grid.ColumnProperty, 1);
+                        ButtonsStackPanel.SetValue(Grid.RowProperty, 0);
+                        RepositionThumb.Cursor = System.Windows.Input.Cursors.SizeWE;
+
+                        if (IsExpanded)
                         {
-                            Height = ButtonsStackPanel.RenderSize.Height;
-                            Width = ButtonsStackPanel.RenderSize.Width;
+                            TopResizeThumb.Visibility = Visibility.Collapsed;
+                            BottomResizeThumb.Visibility = Visibility.Visible;
                         }
 
-                        Top = 0;
+                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
+                        {
+                            if (!IsExpanded)
+                            {
+                                Height = ButtonsStackPanel.RenderSize.Height;
+                                MinHeight = ButtonsStackPanel.RenderSize.Height;
+                                Width = ButtonsStackPanel.RenderSize.Width;
+                                MinWidth = ButtonsStackPanel.RenderSize.Width;
+                            }
 
-                        if (Left + Width > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - Width;
-                    }));
-                    break;
-                }
+                            Top = 0;
+
+                            if (Left + Width > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - Width;
+                        }));
+                        break;
+                    }
                 case ExpandDirection.Left:
-                {
-                    CloseButton.HorizontalAlignment = HorizontalAlignment.Center;
-                    CloseButton.VerticalAlignment = VerticalAlignment.Top;
-                    CloseButton.SetValue(Grid.ColumnProperty, 2);
-                    CloseButton.SetValue(Grid.RowProperty, 1);
-                    ButtonsStackPanel.HorizontalAlignment = HorizontalAlignment.Right;
-                    ButtonsStackPanel.VerticalAlignment = VerticalAlignment.Center;
-                    ButtonsStackPanel.Orientation = Orientation.Vertical;
-                    AlignmentPopup.Placement = PlacementMode.Left;
-                    ButtonsStackPanel.SetValue(Grid.ColumnProperty, 2);
-                    ButtonsStackPanel.SetValue(Grid.RowProperty, 1);
-                    ButtonsStackPanel.Margin = new Thickness(2, 0, 0, 0);
-                    RepositionThumb.Cursor = System.Windows.Input.Cursors.SizeNS;
-
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
                     {
-                        if (!IsExpanded)
+                        CloseButton.HorizontalAlignment = HorizontalAlignment.Center;
+                        CloseButton.VerticalAlignment = VerticalAlignment.Top;
+                        CloseButton.SetValue(Grid.ColumnProperty, 2);
+                        CloseButton.SetValue(Grid.RowProperty, 1);
+                        ButtonsStackPanel.HorizontalAlignment = HorizontalAlignment.Right;
+                        ButtonsStackPanel.VerticalAlignment = VerticalAlignment.Center;
+                        ButtonsStackPanel.Orientation = Orientation.Vertical;
+                        ButtonsStackPanel.SetValue(Grid.ColumnProperty, 2);
+                        ButtonsStackPanel.SetValue(Grid.RowProperty, 1);
+                        RepositionThumb.Cursor = System.Windows.Input.Cursors.SizeNS;
+
+                        if (IsExpanded)
                         {
-                            Height = ButtonsStackPanel.RenderSize.Height;
-                            Width = ButtonsStackPanel.RenderSize.Width;
+                            TopResizeThumb.Visibility = Visibility.Visible;
+                            BottomResizeThumb.Visibility = Visibility.Visible;
                         }
 
-                        Left = SystemParameters.PrimaryScreenWidth - Width;
+                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
+                        {
+                            if (!IsExpanded)
+                            {
+                                Height = ButtonsStackPanel.RenderSize.Height;
+                                MinHeight = ButtonsStackPanel.RenderSize.Height;
+                                Width = ButtonsStackPanel.RenderSize.Width;
+                                MinWidth = ButtonsStackPanel.RenderSize.Width;
+                            }
 
-                        if (Top + Height > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - Height;
-                    }));
-                    break;
-                }
+                            Left = SystemParameters.PrimaryScreenWidth - Width;
+
+                            if (Top + Height > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - Height;
+                        }));
+                        break;
+                    }
                 case ExpandDirection.Right:
-                {
-                    CloseButton.HorizontalAlignment = HorizontalAlignment.Center;
-                    CloseButton.VerticalAlignment = VerticalAlignment.Top;
-                    CloseButton.SetValue(Grid.ColumnProperty, 0);
-                    CloseButton.SetValue(Grid.RowProperty, 1);
-                    ButtonsStackPanel.HorizontalAlignment = HorizontalAlignment.Left;
-                    ButtonsStackPanel.VerticalAlignment = VerticalAlignment.Center;
-                    ButtonsStackPanel.Orientation = Orientation.Vertical;
-                    AlignmentPopup.Placement = PlacementMode.Right;
-                    ButtonsStackPanel.SetValue(Grid.ColumnProperty, 0);
-                    ButtonsStackPanel.SetValue(Grid.RowProperty, 1);
-                    ButtonsStackPanel.Margin = new Thickness(0, 0, 2, 0);
-                    RepositionThumb.Cursor = System.Windows.Input.Cursors.SizeNS;
-
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
                     {
-                        if (!IsExpanded)
+                        CloseButton.HorizontalAlignment = HorizontalAlignment.Center;
+                        CloseButton.VerticalAlignment = VerticalAlignment.Top;
+                        CloseButton.SetValue(Grid.ColumnProperty, 0);
+                        CloseButton.SetValue(Grid.RowProperty, 1);
+                        ButtonsStackPanel.HorizontalAlignment = HorizontalAlignment.Left;
+                        ButtonsStackPanel.VerticalAlignment = VerticalAlignment.Center;
+                        ButtonsStackPanel.Orientation = Orientation.Vertical;
+                        ButtonsStackPanel.SetValue(Grid.ColumnProperty, 0);
+                        ButtonsStackPanel.SetValue(Grid.RowProperty, 1);
+                        RepositionThumb.Cursor = System.Windows.Input.Cursors.SizeNS;
+
+                        if (IsExpanded)
                         {
-                            Height = ButtonsStackPanel.RenderSize.Height;
-                            Width = ButtonsStackPanel.RenderSize.Width;
+                            TopResizeThumb.Visibility = Visibility.Visible;
+                            BottomResizeThumb.Visibility = Visibility.Visible;
                         }
 
-                        Left = 0;
+                        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, new Action(() =>
+                        {
+                            if (!IsExpanded)
+                            {
+                                Height = ButtonsStackPanel.RenderSize.Height;
+                                MinHeight = ButtonsStackPanel.RenderSize.Height;
+                                Width = ButtonsStackPanel.RenderSize.Width;
+                                MinWidth = ButtonsStackPanel.RenderSize.Width;
+                            }
 
-                        if (Top + Height > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - Height;
-                    }));
-                    break;
-                }
+                            Left = 0;
+
+                            if (Top + Height > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - Height;
+                        }));
+                        break;
+                    }
             }
+        }
 
-            AlignmentPopup.IsOpen = false;
+        protected override void OnLocationChanged(EventArgs e)
+        {
+            base.OnLocationChanged(e);
         }
 
         private void OnIsExpandedPropertyChanged()
@@ -285,68 +333,68 @@ namespace WFDTO
             {
                 Height = TargetHeight;
                 Width = TargetWidth;
+                MinWidth = TargetWidth;
 
                 switch (ExpandDirection)
                 {
-                    case System.Windows.Controls.ExpandDirection.Up:
-                    {
-                        Left -= TargetWidth / 2 - ButtonsStackPanel.ActualWidth / 2;
+                    case ExpandDirection.Up:
+                        {
+                            Left -= TargetWidth / 2 - ButtonsStackPanel.ActualWidth / 2;
 
-                        if (Left < 0) Left = 0;
+                            if (Left < 0) Left = 0;
 
-                        if (Left + TargetWidth > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
+                            if (Left + TargetWidth > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
 
-                        Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
+                            Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
 
-                        var windowChrome = WindowChrome.GetWindowChrome(this);
-                        windowChrome.ResizeBorderThickness = new Thickness(5, 5, 5, 0);
+                            TopResizeThumb.Visibility = Visibility.Visible;
 
-                        break;
-                    }
-                    case System.Windows.Controls.ExpandDirection.Down:
-                    {
-                        Left -= TargetWidth / 2 - ButtonsStackPanel.ActualWidth / 2;
+                            break;
+                        }
+                    case ExpandDirection.Down:
+                        {
+                            Left -= TargetWidth / 2 - ButtonsStackPanel.ActualWidth / 2;
 
-                        if (Left < 0) Left = 0;
+                            if (Left < 0) Left = 0;
 
-                        if (Left + TargetWidth > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
+                            if (Left + TargetWidth > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
 
-                        var windowChrome = WindowChrome.GetWindowChrome(this);
-                        windowChrome.ResizeBorderThickness = new Thickness(5, 0, 5, 5);
+                            BottomResizeThumb.Visibility = Visibility.Visible;
 
-                        break;
-                    }
-                    case System.Windows.Controls.ExpandDirection.Left:
-                    {
-                        Top -= TargetHeight / 2 - ButtonsStackPanel.ActualHeight / 2;
+                            break;
+                        }
+                    case ExpandDirection.Left:
+                        {
+                            Top -= TargetHeight / 2 - ButtonsStackPanel.ActualHeight / 2;
 
-                        if (Top < 0) Top = 0;
+                            if (Top < 0) Top = 0;
 
-                        if (Top + TargetHeight > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
+                            if (Top + TargetHeight > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
 
-                        Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
+                            Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
 
-                        var windowChrome = WindowChrome.GetWindowChrome(this);
-                        windowChrome.ResizeBorderThickness = new Thickness(5, 5, 0, 5);
+                            TopResizeThumb.Visibility = Visibility.Visible;
+                            BottomResizeThumb.Visibility = Visibility.Visible;
 
-                        break;
-                    }
-                    case System.Windows.Controls.ExpandDirection.Right:
-                    {
-                        Top -= TargetHeight / 2 - ButtonsStackPanel.ActualHeight / 2;
+                            break;
+                        }
+                    case ExpandDirection.Right:
+                        {
+                            Top -= TargetHeight / 2 - ButtonsStackPanel.ActualHeight / 2;
 
-                        if (Top < 0) Top = 0;
+                            if (Top < 0) Top = 0;
 
-                        if (Top + TargetHeight > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
+                            if (Top + TargetHeight > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
 
-                        var windowChrome = WindowChrome.GetWindowChrome(this);
-                        windowChrome.ResizeBorderThickness = new Thickness(0, 5, 5, 5);
+                            TopResizeThumb.Visibility = Visibility.Visible;
+                            BottomResizeThumb.Visibility = Visibility.Visible;
 
-                        break;
-                    }
+                            break;
+                        }
                 }
 
-                Background = (Brush)TryFindResource("ControlBackground");
+                BindingOperations.SetBinding(this, BackgroundProperty, new ColorBinding("Background"));
+
                 ContentPresenterBorder.Visibility = Visibility.Visible;
                 ContentPresenter.Visibility = Visibility.Visible;
                 CloseButton.Visibility = Visibility.Visible;
@@ -354,62 +402,65 @@ namespace WFDTO
             else
             {
                 Height = ButtonsStackPanel.ActualHeight;
+                MinHeight = ButtonsStackPanel.ActualHeight;
                 Width = ButtonsStackPanel.ActualWidth;
+                MinWidth = ButtonsStackPanel.ActualWidth;
+
+                TopResizeThumb.Visibility = Visibility.Collapsed;
+                BottomResizeThumb.Visibility = Visibility.Collapsed;
 
                 switch (ExpandDirection)
                 {
-                    case System.Windows.Controls.ExpandDirection.Up:
-                    {
-                        Left += TargetWidth / 2 - ButtonsStackPanel.ActualWidth / 2;
+                    case ExpandDirection.Up:
+                        {
+                            Left += TargetWidth / 2 - ButtonsStackPanel.ActualWidth / 2;
 
-                        if (Left < 0) Left = 0;
+                            if (Left < 0) Left = 0;
 
-                        if (Left + TargetWidth > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
+                            if (Left + TargetWidth > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
 
-                        Top = SystemParameters.PrimaryScreenHeight - ButtonsStackPanel.ActualHeight;
+                            Top = SystemParameters.PrimaryScreenHeight - ButtonsStackPanel.ActualHeight;
 
-                        break;
-                    }
-                    case System.Windows.Controls.ExpandDirection.Down:
-                    {
-                        Left += TargetWidth / 2 - ButtonsStackPanel.ActualWidth / 2;
+                            break;
+                        }
+                    case ExpandDirection.Down:
+                        {
+                            Left += TargetWidth / 2 - ButtonsStackPanel.ActualWidth / 2;
 
-                        if (Left < 0) Left = 0;
+                            if (Left < 0) Left = 0;
 
-                        if (Left + TargetWidth > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
+                            if (Left + TargetWidth > SystemParameters.PrimaryScreenWidth) Left = SystemParameters.PrimaryScreenWidth - TargetWidth;
 
-                        break;
-                    }
-                    case System.Windows.Controls.ExpandDirection.Left:
-                    {
-                        Top += TargetHeight / 2 - ButtonsStackPanel.ActualHeight / 2;
+                            break;
+                        }
+                    case ExpandDirection.Left:
+                        {
+                            Top += TargetHeight / 2 - ButtonsStackPanel.ActualHeight / 2;
 
-                        if (Top < 0) Top = 0;
+                            if (Top < 0) Top = 0;
 
-                        if (Top + TargetHeight > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
+                            if (Top + TargetHeight > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
 
-                        Left = SystemParameters.PrimaryScreenWidth - ButtonsStackPanel.ActualWidth;
+                            Left = SystemParameters.PrimaryScreenWidth - ButtonsStackPanel.ActualWidth;
 
-                        break;
-                    }
-                    case System.Windows.Controls.ExpandDirection.Right:
-                    {
-                        Top += TargetHeight / 2 - ButtonsStackPanel.ActualHeight / 2;
+                            break;
+                        }
+                    case ExpandDirection.Right:
+                        {
+                            Top += TargetHeight / 2 - ButtonsStackPanel.ActualHeight / 2;
 
-                        if (Top < 0) Top = 0;
+                            if (Top < 0) Top = 0;
 
-                        if (Top + TargetHeight > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
+                            if (Top + TargetHeight > SystemParameters.PrimaryScreenHeight) Top = SystemParameters.PrimaryScreenHeight - TargetHeight;
 
-                        break;
-                    }
+                            break;
+                        }
                 }
 
                 Background = Brushes.Transparent;
                 ContentPresenterBorder.Visibility = Visibility.Collapsed;
                 ContentPresenter.Visibility = Visibility.Collapsed;
                 CloseButton.Visibility = Visibility.Collapsed;
-                var windowChrome = WindowChrome.GetWindowChrome(this);
-                windowChrome.ResizeBorderThickness = new Thickness(0);
             }
         }
     }

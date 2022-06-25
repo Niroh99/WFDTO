@@ -14,14 +14,10 @@ namespace WFDTO
         public MainWindow()
         {
             InitializeComponent();
-
-            TemplateApplyed += MainWindow_TemplateApplyed;
         }
 
         private void MainWindow_TemplateApplyed(object sender, EventArgs e)
         {
-            SearchTabControl.RequestTabItem += SearchTabControl_RequestTabItem;
-
             Task.Factory.StartNew(() => WarframeDropDataHelper.Initialize())
             .ContinueWith((r) =>
             {
@@ -40,15 +36,21 @@ namespace WFDTO
 
         private ClosableTabItem GetTabItem()
         {
+            var itemSearchUserControl = new ItemSearchUserControl();
+
             var grid = new Grid();
 
-            grid.Children.Add(new ItemSearchUserControl());
+            grid.Children.Add(itemSearchUserControl);
 
-            return new ClosableTabItem
+            var tabItem = new ClosableTabItem
             {
-                Header = "Search",
+                Header = "Relics",
                 Content = grid
             };
+
+            itemSearchUserControl.TabItem = tabItem;
+
+            return tabItem;
         }
 
         private TabItem SearchTabControl_RequestTabItem()

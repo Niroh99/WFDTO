@@ -18,15 +18,6 @@ namespace WFDTOCustomControlLibrary
             DefaultStyleKeyProperty.OverrideMetadata(typeof(ClosableTabItem), new FrameworkPropertyMetadata(typeof(ClosableTabItem)));
         }
 
-        public static readonly DependencyProperty SelectedBrushProperty = DependencyProperty.Register("SelectedBrush", typeof(Brush), typeof(ClosableTabItem));
-        public Brush SelectedBrush
-        {
-            get { return (Brush)GetValue(SelectedBrushProperty); }
-            set { SetValue(SelectedBrushProperty, value); }
-        }
-
-        private Grid MainGrid;
-        private Rectangle SelectedHighlightRectangle;
         private Button CloseButton;
 
         public override void OnApplyTemplate()
@@ -34,8 +25,6 @@ namespace WFDTOCustomControlLibrary
             base.OnApplyTemplate();
 
             CloseButton = (Button)GetTemplateChild("CloseButton");
-            SelectedHighlightRectangle = (Rectangle)GetTemplateChild("SelectedHighlightRectangle");
-            MainGrid = (Grid)GetTemplateChild("MainGrid");
 
             CloseButton.Click += CloseButton_Click;
         }
@@ -50,19 +39,6 @@ namespace WFDTOCustomControlLibrary
                 }
                 else parentTabControl.Items.Remove(this);
             }
-        }
-
-        protected override void OnSelected(RoutedEventArgs e)
-        {
-            base.OnSelected(e);
-
-            Dispatcher.BeginInvoke(new Action(() => SelectedHighlightRectangle.BeginAnimation(WidthProperty, new DoubleAnimation(MainGrid.ActualWidth, TimeSpan.FromSeconds(0.2)))), System.Windows.Threading.DispatcherPriority.Loaded);
-        }
-        protected override void OnUnselected(RoutedEventArgs e)
-        {
-            base.OnUnselected(e);
-
-            Dispatcher.BeginInvoke(new Action(() => SelectedHighlightRectangle.BeginAnimation(WidthProperty, new DoubleAnimation(SelectedHighlightRectangle.ActualWidth, 0, TimeSpan.FromSeconds(0.2)))), System.Windows.Threading.DispatcherPriority.Loaded);
         }
     }
 }

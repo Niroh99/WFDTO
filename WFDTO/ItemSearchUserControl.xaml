@@ -5,150 +5,431 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:WFDTO"
              xmlns:converters="clr-namespace:WFDTO.Converters"
+             xmlns:themes="clr-namespace:WFDTO.Themes"
              xmlns:searchResultModels="clr-namespace:WFDTO.SearchResultModels"
+             xmlns:controls="clr-namespace:WFDTOCustomControlLibrary;assembly=WFDTOCustomControlLibrary"
              mc:Ignorable="d"
              DataContext="{Binding RelativeSource={RelativeSource Self}}"
-             Foreground="{StaticResource GoldBrush}"
+             Foreground="{themes:ColorBinding MainBrush}"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <converters:RelicDropChanceToBrushConverter x:Key="RelicDropChanceToBrushConverter"/>
         <converters:RelicEraToBrushConverter x:Key="RelicEraToBrushConverter"/>
+        <converters:RelicEraToGeometryConverter x:Key="RelicEraToGeometryConverter"/>
         <converters:InvertedNullToVisibilityConverter x:Key="InvertedNullToVisibilityConverter"/>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:BountyRotationConverter x:Key="BountyRotationConverter"/>
         <local:SearchDataTemplateSelector x:Key="SearchDataTemplateSelector">
             <local:SearchDataTemplateSelector.RelicDataTemplate>
                 <DataTemplate DataType="{x:Type searchResultModels:Relic}">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="5"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="5"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
 
-                            <Border VerticalAlignment="Top" Background="{Binding Era, Converter={StaticResource RelicEraToBrushConverter}}" Height="70" Width="70" Margin="5" HorizontalAlignment="Left">
-                                <Border.OpacityMask>
-                                    <ImageBrush ImageSource="..\Images\RelicOpacityMask.png"/>
-                                </Border.OpacityMask>
-                                <Border.Effect>
-                                    <DropShadowEffect ShadowDepth="0" Color="{StaticResource GoldColor}" BlurRadius="10" RenderingBias="Quality" Direction="270"/>
-                                </Border.Effect>
-                            </Border>
-                            
-                            <StackPanel Grid.Column="1" Margin="0 5" VerticalAlignment="Top" HorizontalAlignment="Left">
-                                <TextBlock Text="{Binding Name}" FontSize="15"/>
-                            </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="Bold" Margin="5 3 0 0"/>
+                            <Separator Background="{themes:ColorBinding MainBrush40Percent}"/>
+                        </StackPanel>
 
-                            <StackPanel Grid.Column="3" Margin="0 5" VerticalAlignment="Top" HorizontalAlignment="Left">
-                                <TextBlock Text="Rewards" FontSize="15"/>
-                                <ItemsControl ItemsSource="{Binding Rewards}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
+                        <Expander Grid.Row="1" Margin="1 0 1 1" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="5"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="5"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
 
-                                                <Rectangle Width="5" Margin="0 2" Fill="{Binding DropChance, Converter={StaticResource RelicDropChanceToBrushConverter}}"/>
+                                <Path Height="70" Width="70" Stretch="Uniform" Margin="5" VerticalAlignment="Top" Fill="{Binding Era, Converter={StaticResource RelicEraToBrushConverter}}" Data="{Binding Era, Converter={StaticResource RelicEraToGeometryConverter}}"/>
 
-                                                <TextBlock Grid.Column="1" Margin="2 0 0 0" Text="{Binding Name}"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
+                                <StackPanel Grid.Column="2" Margin="0 5" VerticalAlignment="Top" HorizontalAlignment="Left">
+                                    <TextBlock Text="Rewards" FontSize="15" FontWeight="Bold"/>
+                                    <ItemsControl ItemsSource="{Binding Rewards}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
 
-                            <StackPanel Grid.Column="5" Margin="0 5" VerticalAlignment="Top">
-                                <TextBlock Text="Locations" FontSize="15"/>
-                                <ItemsControl ItemsSource="{Binding Locations}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid>
-                                                <StackPanel>
-                                                    <local:ExpandToggleButton Content="{Binding Planet}" x:Name="ExpandPlanetButton"/>
-                                                    <ItemsControl Margin="2 0 0 0" ItemsSource="{Binding ItemLocations}" Visibility="{Binding IsChecked, ElementName=ExpandPlanetButton, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <ItemsControl.ItemsPanel>
-                                                            <ItemsPanelTemplate>
-                                                                <StackPanel/>
-                                                            </ItemsPanelTemplate>
-                                                        </ItemsControl.ItemsPanel>
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate>
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <TextBlock Text="{Binding Mission.Name}"/>
-                                                                    <Rectangle Fill="{StaticResource GoldBrush}" Opacity="0.4" Width="1" Margin="2 1" SnapsToDevicePixels="True"/>
-                                                                    <TextBlock Text="{Binding Mission.Type}"/>
-                                                                    <Rectangle Fill="{StaticResource GoldBrush}" Opacity="0.4" Width="1" Margin="2 1" SnapsToDevicePixels="True" Visibility="{Binding Rotation, Converter={StaticResource InvertedNullToVisibilityConverter}}"/>
-                                                                    <TextBlock Text="Rotation " Visibility="{Binding Rotation, Converter={StaticResource InvertedNullToVisibilityConverter}}"/>
-                                                                    <TextBlock Text="{Binding Rotation}"/>
-                                                                    <Rectangle Fill="{StaticResource GoldBrush}" Opacity="0.4" Width="1" Margin="2 1" SnapsToDevicePixels="True"/>
-                                                                    <TextBlock Text="{Binding Chance}"/>
-                                                                    <TextBlock Text=" %"/>
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-                                                </StackPanel>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </Grid>
+                                                    <Rectangle Width="5" Fill="{Binding DropChance, Converter={StaticResource RelicDropChanceToBrushConverter}}"/>
 
-                        <!--<local:ExpandToggleButton ExpandDirection="Down" Grid.Row="1" HorizontalContentAlignment="Center"/>-->
+                                                    <TextBlock Grid.Column="1" Margin="2 0 0 0" Text="{Binding Name}"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4" Margin="5 1" VerticalAlignment="Top" HorizontalAlignment="Right">
+                                    <TextBlock Text="Locations" FontSize="15" FontWeight="Bold"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Text="Planet" Margin="2 0 0 0" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="1" Text="Mission" Margin="2 0 0 0" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="2" Text="Chance" Margin="2 0 0 0" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="3" Text="Rotation" Margin="2 0 0 0" FontWeight="Bold"/>
+
+                                        <Separator Grid.Row="1" Grid.ColumnSpan="7" Background="{themes:ColorBinding MainBrush40Percent}"/>
+
+                                        <ItemsControl Grid.Row="2" Margin="2 0 0 0" ItemsSource="{Binding Locations, IsAsync=True}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Mission.Planet}"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <ItemsControl Grid.Row="2" Grid.Column="1" Margin="2 0 0 0" ItemsSource="{Binding Locations, IsAsync=True}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Mission.Name}"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <ItemsControl Grid.Row="2" Grid.Column="2" Margin="2 0 0 0" ItemsSource="{Binding Locations, IsAsync=True}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Chance, StringFormat=' {0:n2} %'}" HorizontalAlignment="Right"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <ItemsControl Grid.Row="2" Grid.Column="3" Margin="2 0 0 0" ItemsSource="{Binding Locations, IsAsync=True}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Rotation}"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </Expander>
                     </Grid>
                 </DataTemplate>
             </local:SearchDataTemplateSelector.RelicDataTemplate>
+            <local:SearchDataTemplateSelector.MissionDataTemplate>
+                <DataTemplate DataType="{x:Type searchResultModels:Mission}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5 3 0 0">
+                                <TextBlock Text="{Binding Planet}" FontSize="15" FontWeight="Bold"/>
+                                <TextBlock Text=" - " FontSize="15" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="Bold"/>
+                                <TextBlock Text=" - " FontSize="15" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding Type}" FontSize="15" FontWeight="Bold"/>
+                            </StackPanel>
+                            <Separator Background="{themes:ColorBinding MainBrush40Percent}"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5 2">
+                            <StackPanel Visibility="{Binding Rewards, Converter={StaticResource InvertedNullToVisibilityConverter}}">
+                                <TextBlock Text="Rewards" FontSize="15"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Name" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" Text="Chance" Margin="2 0 0 0" FontWeight="Bold" HorizontalAlignment="Right"/>
+
+                                    <Separator Grid.Row="1" Grid.ColumnSpan="4" Background="{themes:ColorBinding MainBrush40Percent}"/>
+
+                                    <ItemsControl Grid.Row="2" ItemsSource="{Binding Rewards, IsAsync=True}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <ItemsControl Grid.Row="2" Grid.Column="1" Margin="2 0 0 0" ItemsSource="{Binding Rewards, IsAsync=True}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding DropChance, StringFormat=' {0:n2} %'}" HorizontalAlignment="Right"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Margin="5 0 0 0" Visibility="{Binding RotationA, Converter={StaticResource InvertedNullToVisibilityConverter}}">
+                                <TextBlock Text="Rotation A" FontSize="15"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Name" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" Text="Chance" Margin="2 0 0 0" FontWeight="Bold" HorizontalAlignment="Right"/>
+
+                                    <Separator Grid.Row="1" Grid.ColumnSpan="4" Background="{themes:ColorBinding MainBrush40Percent}"/>
+
+                                    <ItemsControl Grid.Row="2" ItemsSource="{Binding RotationA, IsAsync=True}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <ItemsControl Grid.Row="2" Grid.Column="1" Margin="2 0 0 0" ItemsSource="{Binding RotationA, IsAsync=True}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding DropChance, StringFormat=' {0:n2} %'}" HorizontalAlignment="Right"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Margin="5 0 0 0" Visibility="{Binding RotationB, Converter={StaticResource InvertedNullToVisibilityConverter}}">
+                                <TextBlock Text="Rotation B" FontSize="15"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Name" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" Text="Chance" Margin="2 0 0 0" FontWeight="Bold" HorizontalAlignment="Right"/>
+
+                                    <Separator Grid.Row="1" Grid.ColumnSpan="4" Background="{themes:ColorBinding MainBrush40Percent}"/>
+
+                                    <ItemsControl Grid.Row="2" ItemsSource="{Binding RotationB, IsAsync=True}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <ItemsControl Grid.Row="2" Grid.Column="1" Margin="2 0 0 0" ItemsSource="{Binding RotationB, IsAsync=True}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding DropChance, StringFormat=' {0:n2} %'}" HorizontalAlignment="Right"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Margin="5 0 0 0" Visibility="{Binding RotationC, Converter={StaticResource InvertedNullToVisibilityConverter}}">
+                                <TextBlock Text="Rotation C" FontSize="15"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Name" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" Text="Chance" Margin="2 0 0 0" FontWeight="Bold" HorizontalAlignment="Right"/>
+
+                                    <Separator Grid.Row="1" Grid.ColumnSpan="4" Background="{themes:ColorBinding MainBrush40Percent}"/>
+
+                                    <ItemsControl Grid.Row="2" ItemsSource="{Binding RotationC, IsAsync=True}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <ItemsControl Grid.Row="2" Grid.Column="1" Margin="2 0 0 0" ItemsSource="{Binding RotationC, IsAsync=True}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding DropChance, StringFormat=' {0:n2} %'}" HorizontalAlignment="Right"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </local:SearchDataTemplateSelector.MissionDataTemplate>
+            <local:SearchDataTemplateSelector.BountyDataTemplate>
+                <DataTemplate DataType="{x:Type searchResultModels:Bounty}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5 3 0 0">
+                                <TextBlock Text="{Binding Planet}" FontSize="15" FontWeight="Bold"/>
+                                <TextBlock Text=" - " FontSize="15" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="Bold"/>
+                            </StackPanel>
+                            <Separator Background="{themes:ColorBinding MainBrush40Percent}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Margin="5 2">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Content="Drop Rotation A" x:Name="RotationARadioButton" IsChecked="True" Padding="5 0 0 0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"/>
+                                <RadioButton Content="Drop Rotation B" x:Name="RotationBRadioButton" BorderThickness="1 0 0 0" Padding="5 0 0 0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"/>
+                                <RadioButton Content="Drop Rotation C" x:Name="RotationCRadioButton" BorderThickness="1 0 0 0" Padding="5 0 0 0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"/>
+                            </StackPanel>
+
+                            <Separator Background="{themes:ColorBinding MainBrush40Percent}"/>
+                            
+                            <Grid Margin="0 5 0 0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Name" FontWeight="Bold"/>
+                                <TextBlock Grid.Column="1" Text="Stage" Margin="2 0 0 0" FontWeight="Bold"/>
+                                <TextBlock Grid.Column="2" Text="Chance" Margin="2 0 0 0" FontWeight="Bold" HorizontalAlignment="Right"/>
+
+                                <Separator Grid.Row="1" Grid.ColumnSpan="4" Background="{themes:ColorBinding MainBrush40Percent}"/>
+
+                                <ItemsControl Grid.Row="2">
+                                    <ItemsControl.ItemsSource>
+                                        <MultiBinding Converter="{StaticResource BountyRotationConverter}">
+                                            <Binding IsAsync="True"/>
+                                            <Binding Path="IsChecked" ElementName="RotationARadioButton" IsAsync="True"/>
+                                            <Binding Path="IsChecked" ElementName="RotationBRadioButton" IsAsync="True"/>
+                                            <Binding Path="IsChecked" ElementName="RotationCRadioButton" IsAsync="True"/>
+                                        </MultiBinding>
+                                    </ItemsControl.ItemsSource>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl Grid.Row="2" Grid.Column="1" Margin="2 0 0 0">
+                                    <ItemsControl.ItemsSource>
+                                        <MultiBinding Converter="{StaticResource BountyRotationConverter}">
+                                            <Binding IsAsync="True"/>
+                                            <Binding Path="IsChecked" ElementName="RotationARadioButton" IsAsync="True"/>
+                                            <Binding Path="IsChecked" ElementName="RotationBRadioButton" IsAsync="True"/>
+                                            <Binding Path="IsChecked" ElementName="RotationCRadioButton" IsAsync="True"/>
+                                        </MultiBinding>
+                                    </ItemsControl.ItemsSource>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Stage}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl Grid.Row="2" Grid.Column="2" Margin="2 0 0 0">
+                                    <ItemsControl.ItemsSource>
+                                        <MultiBinding Converter="{StaticResource BountyRotationConverter}">
+                                            <Binding IsAsync="True"/>
+                                            <Binding Path="IsChecked" ElementName="RotationARadioButton" IsAsync="True"/>
+                                            <Binding Path="IsChecked" ElementName="RotationBRadioButton" IsAsync="True"/>
+                                            <Binding Path="IsChecked" ElementName="RotationCRadioButton" IsAsync="True"/>
+                                        </MultiBinding>
+                                    </ItemsControl.ItemsSource>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DropChance, StringFormat=' {0:n2} %'}" HorizontalAlignment="Right"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </local:SearchDataTemplateSelector.BountyDataTemplate>
         </local:SearchDataTemplateSelector>
     </UserControl.Resources>
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
         <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="120"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-            <ComboBox Width="150" ItemsSource="{x:Static local:SearchType.SearchTypes}" SelectedValue="{Binding SearchType}" SelectedValuePath="Id" DisplayMemberPath="Name"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-            <TextBlock Text="Search" Grid.Column="1" TextAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
+                <ComboBox Width="150" ItemsSource="{x:Static local:SearchType.SearchTypes}" SelectedValue="{Binding SearchType}" SelectedValuePath="Id" DisplayMemberPath="Name"/>
 
-            <TextBox Grid.Column="2" KeyUp="SearchTextBox_KeyUp" Text="{Binding SearchString}" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Column="1" Margin="5 0 0 0" Text="{Binding SearchString}" controls:AttachedProperties.Watermark="Search" VerticalContentAlignment="Center"/>
+            </Grid>
+
+            <Separator Margin="5 2" Grid.Row="1" Opacity="0.2" Foreground="{themes:ColorBinding MainBrush}"/>
+
+            <ListBox Grid.Row="2" x:Name="SearchResultListBox" ScrollViewer.ScrollChanged="SearchResultListBox_ScrollChanged" ItemsSource="{Binding SearchItems}" ItemTemplateSelector="{StaticResource SearchDataTemplateSelector}">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
         </Grid>
-
-        <Separator Margin="5 2" Grid.Row="1" Opacity="0.2" Foreground="{StaticResource GoldBrush}"/>
-
-        <ListBox Grid.Row="2" ItemsSource="{Binding SearchItems}" ItemTemplateSelector="{StaticResource SearchDataTemplateSelector}" ScrollViewer.CanContentScroll="False">
-            <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel/>
-                </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-        </ListBox>
+        <Grid x:Name="BusyRectangle" Visibility="Collapsed">
+            <Rectangle Fill="{StaticResource ControlBackground}"/>
+            <TextBlock Text="Loading..." VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </Grid>
     </Grid>
 </UserControl>

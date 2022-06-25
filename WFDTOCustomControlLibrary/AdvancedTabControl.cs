@@ -13,6 +13,8 @@ namespace WFDTOCustomControlLibrary
             DefaultStyleKeyProperty.OverrideMetadata(typeof(AdvancedTabControl), new FrameworkPropertyMetadata(typeof(AdvancedTabControl)));
         }
 
+        public event RequestTabItem RequestTabItem;
+
         private Button AddTabButton;
 
         public override void OnApplyTemplate()
@@ -23,8 +25,6 @@ namespace WFDTOCustomControlLibrary
 
             AddTabButton.Click += AddTabButton_Click;
         }
-
-        public RequestTabItem RequestTabItem;
 
         private void AddTabButton_Click(object sender, RoutedEventArgs e)
         {

@@ -23,15 +23,13 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <ContentPresenter ContentSource="Header"/>
 
                                 <Button Grid.Column="1" Name="CloseButton">
                                     <TextBlock Text="X"/>
                                 </Button>
                             </Grid>
-
-                            <Rectangle Grid.Row="1" x:Name="SelectedHighlightRectangle" Fill="{TemplateBinding SelectedBrush}" VerticalAlignment="Bottom" Width="0" Height="5"/>
                         </Grid>
                     </Grid>
                 </ControlTemplate>
@@ -39,11 +37,26 @@
         </Setter>
     </Style>
 
-    <Style TargetType="{x:Type local:GradientBackgroundControl}">
+    <Style TargetType="{x:Type local:GradientBackgroundBorder}">
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
 
+    <Style TargetType="{x:Type local:AccentRectangle}">
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:AccentRectangle}">
+                    <Grid>
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
+                        <Rectangle HorizontalAlignment="Center" Width="0" x:Name="HighLightRectangle" Fill="{TemplateBinding HighlightBrush}"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
     <Style TargetType="{x:Type local:AdvancedTabControl}">
         <Setter Property="Template">
             <Setter.Value>

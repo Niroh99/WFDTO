@@ -4,7 +4,7 @@ using System.Text;
 
 namespace WFDTO.SearchResultModels
 {
-    public class Relic : SearchResult
+    public class Relic : SearchResultBase
     {
         public string Era { get; set; }
 
@@ -12,20 +12,8 @@ namespace WFDTO.SearchResultModels
 
         public string Name
         {
-            get
-            {
-                return $"{Era} {Description}";
-            }
+            get { return $"{Era} {Description}"; }
+            set { }
         }
-
-        public List<Item> Rewards { get; set; }
-
-        public List<Item> RotationA { get; set; }
-
-        public List<Item> RotationB { get; set; }
-
-        public List<Item> RotationC { get; set; }
-
-        public List<ItemLocationGroup> Locations { get; set; }
     }
 }

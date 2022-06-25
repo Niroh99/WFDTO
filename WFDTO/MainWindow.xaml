@@ -5,15 +5,21 @@
                      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                      xmlns:local="clr-namespace:WFDTO"
                      xmlns:controls="clr-namespace:WFDTOCustomControlLibrary;assembly=WFDTOCustomControlLibrary"
+                     xmlns:themes="clr-namespace:WFDTO.Themes"
+                     DataContext="{Binding RelativeSource={RelativeSource Self}}"
+                     TemplateApplyed="MainWindow_TemplateApplyed"
                      mc:Ignorable="d"
                      TargetHeight="300"
                      TargetWidth="600"
+                     MinWidth="600"
                      d:DesignHeight="200"
                      d:DesignWidth="600"
+                     FontFamily="Niva Ragular"
+                     TextElement.FontWeight="Bold"
                      Background="Transparent"
-                     Foreground="{StaticResource GoldBrush}">
+                     Foreground="{themes:ColorBinding MainBrush}">
     <Grid>
-        <controls:AdvancedTabControl x:Name="SearchTabControl" Margin="5"/>
-        <TextBlock Text="Loading.." x:Name="LoadingTextBlock" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <controls:AdvancedTabControl x:Name="SearchTabControl" Margin="5" RequestTabItem="SearchTabControl_RequestTabItem"/>
+        <TextBlock Text="Loading..." x:Name="LoadingTextBlock" VerticalAlignment="Center" HorizontalAlignment="Center"/>
     </Grid>
 </local:OverlayWindow>

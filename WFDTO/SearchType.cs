@@ -17,6 +17,16 @@ namespace WFDTO
                     {
                         Id = 0,
                         Name = "Relics"
+                    },
+                    new SearchType
+                    {
+                        Id = 1,
+                        Name = "Missions"
+                    },
+                    new SearchType
+                    {
+                        Id = 2,
+                        Name = "Bounties"
                     }
                 };
             }

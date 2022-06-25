@@ -5,6 +5,7 @@ using System.Text;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Threading.Tasks;
 
 namespace WFDTO
 {
@@ -24,63 +25,202 @@ namespace WFDTO
             return true;
         }
 
+        public TabItem TabItem;
+
         byte _searchType;
         public byte SearchType
         {
             get { return _searchType; }
-            set { if (SetProperty(ref _searchType, value)) Filter(); }
+            set
+            {
+                if (SetProperty(ref _searchType, value))
+                {
+                    UpdateTabItemHeader();
+
+                    Filter();
+                }
+            }
         }
 
         string _searchString;
         public string SearchString
         {
             get { return _searchString; }
-            set { if (SetProperty(ref _searchString, value)) Filter(); }
+            set
+            {
+                if (SetProperty(ref _searchString, value))
+                {
+                    UpdateTabItemHeader();
+
+                    Filter();
+                }
+            }
         }
 
-        ObservableCollection<SearchResultModels.SearchResult> _searchItems;
-        public ObservableCollection<SearchResultModels.SearchResult> SearchItems
+        private int _page = 0;
+
+        private List<SearchResultModels.SearchResultBase> _fittingResults = new List<SearchResultModels.SearchResultBase>();
+
+        AdvancedObservableCollection<SearchResultModels.SearchResultBase> _searchItems;
+        public AdvancedObservableCollection<SearchResultModels.SearchResultBase> SearchItems
         {
             get
             {
-                if (_searchItems == null) _searchItems = new ObservableCollection<SearchResultModels.SearchResult>();
+                if (_searchItems == null) _searchItems = new AdvancedObservableCollection<SearchResultModels.SearchResultBase>();
 
                 return _searchItems;
             }
         }
 
-        private void SearchTextBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        private void UpdateTabItemHeader()
         {
-            if (e.Key == System.Windows.Input.Key.Enter)
+            string header = "Search";
+
+            switch (SearchType)
             {
-                ((TextBox)sender).GetBindingExpression(TextBox.TextProperty).UpdateSource();
+                case 0: header = "Relic"; break;
+                case 1: header = "Missions"; break;
+                case 2: header = "Bounties"; break;
             }
+
+            header += string.IsNullOrWhiteSpace(SearchString) ? string.Empty : " - " + SearchString;
+
+            TabItem.Header = header;
         }
 
         private void Filter()
         {
+            _page = 0;
             SearchItems.Clear();
+            _fittingResults.Clear();
 
-            var lowerSearchStringElements = SearchString.ToLower();
+            if (string.IsNullOrWhiteSpace(SearchString)) return;
 
-            switch (SearchType)
+            BusyRectangle.Visibility = Visibility.Visible;
+
+            Task.Factory.StartNew(() =>
             {
-                case 0:
+                var lowerSearchString = SearchString?.ToLower();
+
+                switch (SearchType)
                 {
-                    var fittingResults = WarframeDropDataHelper.Relics.Where(i => i.Name?.ToLower().Contains(lowerSearchStringElements) == true || i.Rewards.Any(j => j.Name?.ToLower().Contains(lowerSearchStringElements) == true)).ToList();
+                    case 0:
+                        {
+                            double noLicationsOffset = 0.0;
 
-                    for (int i = 0; i < fittingResults.Count; i++)
-                    {
-                        var fittingResult = fittingResults[i];
+                            for (int i = 0; i < WarframeDropDataHelper.Relics.Count; i++)
+                            {
+                                var relic = WarframeDropDataHelper.Relics[i];
 
-                        SearchItems.Add(fittingResult);
-                    }
+                                var searchIndex = GetAverage(lowerSearchString.SearchStringCompare(relic.Name), relic.Rewards.Min(i => lowerSearchString.SearchStringCompare(i.Name)));
 
-                    break;
+                                if (searchIndex == null) continue;
+
+                                relic.SearchIndex = searchIndex.Value;
+
+                                if (relic.Locations.Count == 0 && relic.SearchIndex > noLicationsOffset) noLicationsOffset = relic.SearchIndex;
+
+                                _fittingResults.Add(relic);
+                            }
+
+                            for (int i = 0; i < _fittingResults.Count; i++)
+                            {
+                                var fittingResult = _fittingResults[i];
+
+                                if (fittingResult.Locations.Count == 0) fittingResult.SearchIndex += noLicationsOffset;
+                            }
+
+                            break;
+                        }
+                    case 1:
+                        {
+                            for (int i = 0; i < WarframeDropDataHelper.Missions.Count; i++)
+                            {
+                                var mission = WarframeDropDataHelper.Missions[i];
+
+                                mission.SearchIndex = 0;
+
+                                var searchIndex = GetAverage(lowerSearchString.SearchStringCompare(mission.Name),
+                                    lowerSearchString.SearchStringCompare(mission.Planet),
+                                    lowerSearchString.SearchStringCompare(mission.Type),
+                                    mission.Rewards?.Min(i => lowerSearchString.SearchStringCompare(i.Name)),
+                                    mission.RotationA?.Min(i => lowerSearchString.SearchStringCompare(i.Name)),
+                                    mission.RotationB?.Min(i => lowerSearchString.SearchStringCompare(i.Name)),
+                                    mission.RotationC?.Min(i => lowerSearchString.SearchStringCompare(i.Name)));
+
+                                if (searchIndex == null) continue;
+
+                                mission.SearchIndex = searchIndex.Value;
+
+                                _fittingResults.Add(mission);
+                            }
+
+                            break;
+                        }
+                    case 2:
+                        {
+                            for (int i = 0; i < WarframeDropDataHelper.Bounties.Count; i++)
+                            {
+                                var bounty = WarframeDropDataHelper.Bounties[i];
+
+                                bounty.SearchIndex = 0;
+
+                                var searchIndex = GetAverage(lowerSearchString.SearchStringCompare(bounty.Name),
+                                    lowerSearchString.SearchStringCompare(bounty.Planet),
+                                    bounty.RotationA?.Min(i => lowerSearchString.SearchStringCompare(i.Name)),
+                                    bounty.RotationB?.Min(i => lowerSearchString.SearchStringCompare(i.Name)),
+                                    bounty.RotationC?.Min(i => lowerSearchString.SearchStringCompare(i.Name)));
+
+                                if (searchIndex == null) continue;
+
+                                bounty.SearchIndex = searchIndex.Value;
+
+                                _fittingResults.Add(bounty);
+                            }
+
+                            break;
+                        }
+                }
+            }).ContinueWith(r =>
+            {
+                BusyRectangle.Visibility = Visibility.Collapsed;
+
+                SearchItems.AddRange(_fittingResults.OrderBy(i => i.SearchIndex).Take(20));
+
+                SearchResultListBox.ChildOfType<ScrollViewer>().ScrollToVerticalOffset(0);
+
+            }, TaskScheduler.FromCurrentSynchronizationContext());
+        }
+
+        private double? GetAverage(params byte?[] values)
+        {
+            if (values.All(i => i == null)) return null;
+
+            var total = 0.0;
+            var valueCount = 0;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                var value = values[i];
+
+                if (value != null)
+                {
+                    total += value.Value;
+                    valueCount++;
                 }
             }
 
+            return total / valueCount;
+        }
 
+        private void SearchResultListBox_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (e.VerticalOffset + e.ViewportHeight == e.ExtentHeight && SearchItems.Count < _fittingResults.Count)
+            {
+                _page++;
+
+                SearchItems.AddRange(_fittingResults.OrderBy(i => i.SearchIndex).Skip(_page * 20).Take(20));
+            }
         }
     }
 }

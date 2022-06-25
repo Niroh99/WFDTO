@@ -22,6 +22,7 @@ namespace WFDTO
 
             var response = JsonConvert.DeserializeObject<WarframeDropDataModels.AllDataReponse>(content);
 
+            #region Missions
             Missions.Clear();
 
             var missionRewardsEnumerator = response.MissionRewards.GetEnumerator();
@@ -91,7 +92,17 @@ namespace WFDTO
                     Missions.Add(mission);
                 }
             }
+            #endregion
 
+            #region Bounties
+            Bounties.Clear();
+
+            ConvertBounties(response.CetusBountyRewards, "Earth");
+            ConvertBounties(response.SolarisBountyRewards, "Venus");
+            ConvertBounties(response.DeimosRewards, "Deimos");
+            #endregion
+
+            #region Relics
             Relics.Clear();
 
             for (int i = 0; i < response.Relics.Count; i++)
@@ -103,65 +114,38 @@ namespace WFDTO
                 var relic = new SearchResultModels.Relic
                 {
                     Era = relicModel.Tier,
-                    Description = relicModel.RelicName
+                    Description = relicModel.RelicName,
+                    Locations = new List<SearchResultModels.ItemLocation>()
                 };
 
                 relic.Rewards = relicModel.Rewards.Select(j => j.ToItem()).OrderByDescending(i => i.DropChance).ToList();
 
-                var locations = Missions.Where(j => j.Rewards?.Any(k => k.Name == $"{relic.Era} {relic.Description} Relic") == true).ToList();
+                var relicName = $"{relic.Era} {relic.Description} Relic";
+
+                var locations = Missions.Where(j => j.Rewards?.Any(k => k.Name == relicName) == true).ToList();
 
                 for (int j = 0; j < locations.Count; j++)
                 {
                     var location = locations[j];
 
-                    if (relic.Locations == null) relic.Locations = new List<SearchResultModels.ItemLocationGroup>();
+                    var chance = location.Rewards.FirstOrDefault(k => k.Name == relicName).DropChance;
 
-                    var itemLocationGroup = relic.Locations.FirstOrDefault(i => i.Planet == location.Planet);
-
-                    if (itemLocationGroup == null)
-                    {
-                        itemLocationGroup = new SearchResultModels.ItemLocationGroup
-                        {
-                            Planet = location.Planet,
-                            ItemLocations = new List<SearchResultModels.ItemLocation>()
-                        };
-
-                        relic.Locations.Add(itemLocationGroup);
-                    }
-
-                    var chance = location.Rewards.FirstOrDefault(k => k.Name == $"{relic.Era} {relic.Description} Relic").DropChance;
-
-                    itemLocationGroup.ItemLocations.Add(new SearchResultModels.ItemLocation
+                    relic.Locations.Add(new SearchResultModels.ItemLocation
                     {
                         Mission = location,
                         Chance = chance
                     });
                 }
 
-                locations = Missions.Where(j => j.RotationA?.Any(k => k.Name == $"{relic.Era} {relic.Description} Relic") == true).ToList();
+                locations = Missions.Where(j => j.RotationA?.Any(k => k.Name == relicName) == true).ToList();
 
                 for (int j = 0; j < locations.Count; j++)
                 {
                     var location = locations[j];
 
-                    if (relic.Locations == null) relic.Locations = new List<SearchResultModels.ItemLocationGroup>();
+                    var chance = location.RotationA.FirstOrDefault(k => k.Name == relicName).DropChance;
 
-                    var itemLocationGroup = relic.Locations.FirstOrDefault(i => i.Planet == location.Planet);
-
-                    if (itemLocationGroup == null)
-                    {
-                        itemLocationGroup = new SearchResultModels.ItemLocationGroup
-                        {
-                            Planet = location.Planet,
-                            ItemLocations = new List<SearchResultModels.ItemLocation>()
-                        };
-
-                        relic.Locations.Add(itemLocationGroup);
-                    }
-
-                    var chance = location.RotationA.FirstOrDefault(k => k.Name == $"{relic.Era} {relic.Description} Relic").DropChance;
-
-                    itemLocationGroup.ItemLocations.Add(new SearchResultModels.ItemLocation
+                    relic.Locations.Add(new SearchResultModels.ItemLocation
                     {
                         Rotation = "A",
                         Chance = chance,
@@ -169,30 +153,15 @@ namespace WFDTO
                     });
                 }
 
-                locations = Missions.Where(j => j.RotationB?.Any(k => k.Name == $"{relic.Era} {relic.Description} Relic") == true).ToList();
+                locations = Missions.Where(j => j.RotationB?.Any(k => k.Name == relicName) == true).ToList();
 
                 for (int j = 0; j < locations.Count; j++)
                 {
                     var location = locations[j];
 
-                    if (relic.Locations == null) relic.Locations = new List<SearchResultModels.ItemLocationGroup>();
+                    var chance = location.RotationB.FirstOrDefault(k => k.Name == relicName).DropChance;
 
-                    var itemLocationGroup = relic.Locations.FirstOrDefault(i => i.Planet == location.Planet);
-
-                    if (itemLocationGroup == null)
-                    {
-                        itemLocationGroup = new SearchResultModels.ItemLocationGroup
-                        {
-                            Planet = location.Planet,
-                            ItemLocations = new List<SearchResultModels.ItemLocation>()
-                        };
-
-                        relic.Locations.Add(itemLocationGroup);
-                    }
-
-                    var chance = location.RotationB.FirstOrDefault(k => k.Name == $"{relic.Era} {relic.Description} Relic").DropChance;
-
-                    itemLocationGroup.ItemLocations.Add(new SearchResultModels.ItemLocation
+                    relic.Locations.Add(new SearchResultModels.ItemLocation
                     {
                         Rotation = "B",
                         Chance = chance,
@@ -200,30 +169,15 @@ namespace WFDTO
                     });
                 }
 
-                locations = Missions.Where(j => j.RotationC?.Any(k => k.Name == $"{relic.Era} {relic.Description} Relic") == true).ToList();
+                locations = Missions.Where(j => j.RotationC?.Any(k => k.Name == relicName) == true).ToList();
 
                 for (int j = 0; j < locations.Count; j++)
                 {
                     var location = locations[j];
 
-                    if (relic.Locations == null) relic.Locations = new List<SearchResultModels.ItemLocationGroup>();
+                    var chance = location.RotationC.FirstOrDefault(k => k.Name == relicName).DropChance;
 
-                    var itemLocationGroup = relic.Locations.FirstOrDefault(i => i.Planet == location.Planet);
-
-                    if (itemLocationGroup == null)
-                    {
-                        itemLocationGroup = new SearchResultModels.ItemLocationGroup
-                        {
-                            Planet = location.Planet,
-                            ItemLocations = new List<SearchResultModels.ItemLocation>()
-                        };
-
-                        relic.Locations.Add(itemLocationGroup);
-                    }
-
-                    var chance = location.RotationC.FirstOrDefault(k => k.Name == $"{relic.Era} {relic.Description} Relic").DropChance;
-
-                    itemLocationGroup.ItemLocations.Add(new SearchResultModels.ItemLocation
+                    relic.Locations.Add(new SearchResultModels.ItemLocation
                     {
                         Rotation = "C",
                         Chance = chance,
@@ -231,12 +185,69 @@ namespace WFDTO
                     });
                 }
 
+                relic.Locations = relic.Locations.OrderByDescending(i => i.Chance).ToList();
+
                 Relics.Add(relic);
+            }
+            #endregion
+        }
+
+        private static void ConvertBounties(List<WarframeDropDataModels.BountyModel> bounties, string planet)
+        {
+            for (int i = 0; i < bounties.Count; i++)
+            {
+                var bountyModel = bounties[i];
+
+                var bounty = new SearchResultModels.Bounty
+                {
+                    Planet = planet,
+                    Name = bountyModel.BountyLevel
+                };
+
+                if (bountyModel.BountyRewards.A != null)
+                {
+                    for (int j = 0; j < bountyModel.BountyRewards.A.Count; j++)
+                    {
+                        var bountyReward = bountyModel.BountyRewards.A[j];
+
+                        if (bounty.RotationA == null) bounty.RotationA = new List<SearchResultModels.Item>();
+
+                        bounty.RotationA.Add(bountyReward.ToBountyItem());
+                    }
+                }
+
+                if (bountyModel.BountyRewards.B != null)
+                {
+                    for (int j = 0; j < bountyModel.BountyRewards.B.Count; j++)
+                    {
+                        var bountyReward = bountyModel.BountyRewards.B[j];
+
+                        if (bounty.RotationB == null) bounty.RotationB = new List<SearchResultModels.Item>();
+
+                        bounty.RotationB.Add(bountyReward.ToBountyItem());
+                    }
+                }
+
+                if (bountyModel.BountyRewards.C != null)
+                {
+                    for (int j = 0; j < bountyModel.BountyRewards.C.Count; j++)
+                    {
+                        var bountyReward = bountyModel.BountyRewards.C[j];
+
+                        if (bounty.RotationC == null) bounty.RotationC = new List<SearchResultModels.Item>();
+
+                        bounty.RotationC.Add(bountyReward.ToBountyItem());
+                    }
+                }
+
+                Bounties.Add(bounty);
             }
         }
 
         public static readonly List<SearchResultModels.Mission> Missions = new List<SearchResultModels.Mission>();
 
         public static readonly List<SearchResultModels.Relic> Relics = new List<SearchResultModels.Relic>();
+
+        public static readonly List<SearchResultModels.Bounty> Bounties = new List<SearchResultModels.Bounty>();
     }
 }
